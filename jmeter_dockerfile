@@ -1,0 +1,42 @@
+from debian:latest
+
+arg JMETER_VERSION="5.1.1"
+
+run apt-get update \
+    && apt-get install -y \
+    python \
+    default-jre-headless \
+    python-tk \
+    python-pip \
+    python-dev \
+    libxml2-dev \
+    libxslt-dev \
+    zlib1g-dev \
+    net-tools \
+    wget \
+    unzip \
+    curl \
+    gnupg \
+    && apt-get clean
+
+RUN wget "http://stedolan.github.io/jq/download/linux64/jq" && chmod 755 jq
+
+run pip install bzt \
+    && pip install --upgrade bzt
+
+## DOWNLOAD JMETER##
+run wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.zip -P /root/.bzt/jmeter-taurus \
+    && unzip /root/.bzt/jmeter-taurus/apache-jmeter-${JMETER_VERSION}.zip -d /root/.bzt/jmeter-taurus \
+    && mv /root/.bzt/jmeter-taurus/apache-jmeter-${JMETER_VERSION} /root/.bzt/jmeter-taurus/${JMETER_VERSION} \
+    && rm /root/.bzt/jmeter-taurus/apache-jmeter-${JMETER_VERSION}.zip
+
+#run wget https://dl.influxdata.com/telegraf/releases/telegraf_1.11.3-1_amd64.deb --no-check-certificate --quiet \
+#    && dpkg -i telegraf_1.11.3-1_amd64.deb \
+#    && rm telegraf_1.11.3-1_amd64.deb
+
+run mkdir /tmp/scripts
+copy scripts/showresults.py /tmp/scripts
+copy scripts/showresults.sh /tmp/scripts
+run chmod 777 /tmp/scripts/showresults.sh
+
+copy telegraf.conf /etc/telegraf

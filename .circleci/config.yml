@@ -1,0 +1,45 @@
+enterprise_setup: &enterprise_setup
+  run:
+    name: 'Prepare Enterprise Setup'
+    command: 'curl -sL "https://tools.circleci.foc.zone/install-certs" | bash -'
+
+
+#############################################################
+# Define workflows
+##############################################################
+workflows:
+  version: 2
+
+  impact_images:
+    jobs:
+      - build_image_jmeter
+
+
+#############################################################
+# Define jobs
+##############################################################
+
+jobs:
+ 
+  build_image_jmeter:
+    machine: true
+    steps:
+      - *enterprise_setup
+      - checkout
+      - run:
+          name: Build docker image
+          command: |
+            docker build --pull -f jmeter_dockerfile \
+            -t jmeter_image .
+            
+      - run:
+          name: Tag the docker image for upload
+          command: docker tag jmeter_image qldockerdtr.rockfin.com/impact/jmeter
+          
+      - run:
+          name: Log into our qldockerdtr.rockfin.com check CircleCI Environment Variables
+          command: docker login --username $_dtrusr --password $_dtrpwd https://qldockerdtr.rockfin.com
+          
+      - run:
+          name: Upload the Docker image to qldockerdtr
+          command: docker push qldockerdtr.rockfin.com/impact/jmeter
